@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="Gradle: com.beepiz.blegattcoroutines:blegattcoroutines-core:0.4.1@aar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/932039c2221497df5d2408d0d67e5235/blegattcoroutines-core-0.4.1/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/932039c2221497df5d2408d0d67e5235/blegattcoroutines-core-0.4.1/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.beepiz.blegattcoroutines/blegattcoroutines-core/0.4.1/e8ec123fc34a29aa69bc96db1f0da40354f1534a/blegattcoroutines-core-0.4.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

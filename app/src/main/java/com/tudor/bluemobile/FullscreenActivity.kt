@@ -27,7 +27,6 @@ import java.lang.Exception
 
 private const val TAG = "GattServerActivity"
 private const val REQUEST_ENABLE_BT = 1
-private const val SCAN_PERIOD: Long = 10000
 
 class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineScope {
 
@@ -55,7 +54,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
 
     //Calibrated values of gyroscope
     private var calState = -1
-    private var calibratedValues = CalibrationData(0.toFloat(),0.toFloat(),0.toFloat(),0.toFloat())
+    private var calibratedValues = CalibrationData(0.toFloat(),0.toFloat(),0.toFloat())
     private var isCalibrated: Boolean = false
 
     private val baseBluetoothUuidPostfix = "0000-1000-8000-00805f9b34fb"
@@ -71,14 +70,13 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
     }
     private val BluetoothAdapter.isDisabled: Boolean
         get() = !isEnabled
-    private lateinit var bluetoothLeHelicopter: BluetoothDevice
-    private lateinit var helicopterConnection: GattConnection
+    private lateinit var bluetoothLeCar: BluetoothDevice
+    private lateinit var carConnection: GattConnection
     private var bleConnectionState: Boolean = false
     private lateinit var mainCharacteristic: BluetoothGattCharacteristic
 
     //Direction and speed of the helicopter
-    private var tempMaxDirection: Float = 0.toFloat()
-    private var helicopterDirection: Float = 0.toFloat()
+    private var carDirection: Float = 0.toFloat()
     private var helicopterWay: Int = 0
     private var goesToTheRight: Int = 0
 
@@ -162,7 +160,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
         //Find the connect button and set a click listener to it
         connectButton.setOnClickListener {
             if ( bleConnectionState ) {
-                helicopterConnection.close()
+                carConnection.close()
                 connectButton.text = "Conectare"
                 fullscreen.text = "Acum va puteti conecta la elicopter!"
                 bleConnectionState = false
@@ -170,11 +168,11 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
                 Toast.makeText(applicationContext, "Trebuie sa calibrati mai intai telefonul!", Toast.LENGTH_SHORT).show()
             }  else {
                 //Find the bluetooth helicopter based on its MAC address and create a GATT instance with it
-                bluetoothLeHelicopter = bluetoothAdapter!!.getRemoteDevice(defaultDeviceMacAddress)
-                helicopterConnection = GattConnection.invoke(bluetoothLeHelicopter)
+                bluetoothLeCar = bluetoothAdapter!!.getRemoteDevice(defaultDeviceMacAddress)
+                carConnection = GattConnection.invoke(bluetoothLeCar)
                 launch {
-                    helicopterConnection.connect()
-                    val services = helicopterConnection.discoverServices()
+                    carConnection.connect()
+                    val services = carConnection.discoverServices()
                     //Code bellow is highly wank and innefficient because it searches every charact until it finds the correct one
                     //I am doing this because I haven't found a way (yet) to instantiate a BluetoothGATTCharacteristic with only the UUID
                     services.forEach {
@@ -189,7 +187,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
                         }
                     }
                     bleConnectionState = true
-                    fullscreen.text = "Inclinati telefonul pentru a controla elicopterul"
+                    fullscreen.text = "Inclinati telefonul pentru a controla masina!"
                     connectButton.text = "Deconectare"
                 }
             }
@@ -224,7 +222,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
                     2 -> { //Calibrated
                         calState = -2
                         alert.dismiss()
-                        fullscreen.setText("Acum va puteti conecta la elicopter!")
+                        fullscreen.setText("Acum va puteti conecta la masina!")
                         alert.setMessage("Acum veti calibra senzorul. Apasati butonul Gata pentru a incepe.")
                         isCalibrated = true
                     }
@@ -249,7 +247,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
     override fun onDestroy() {
         super.onDestroy()
         blConnectionJob.cancel()
-        helicopterConnection.close()
+        carConnection.close()
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
@@ -262,41 +260,29 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
         if ( calState != -1 ) {
             when(calState) {
                 0 -> {
-                    calibratedValues.baseValueY = event.values[1]
                     calibratedValues.baseValueZ = event.values[2]
                 }
                 1 -> calibratedValues.maxLeftPos = event.values[2]
                 2 -> calibratedValues.maxRightPos = event.values[2]
             }
-            //Log.d("CalibData", "baseValueY = ${calibratedValues.baseValueY}\n")
-            //Log.d("CalibData", "baseValueZ = ${calibratedValues.baseValueZ}\n")
-            //Log.d("CalibData", "maxLeftPos = ${calibratedValues.maxLeftPos}\n")
-            //Log.d("CalibData", "maxRightPos = ${calibratedValues.maxRightPos}\n")
         } else if (bleConnectionState && isCalibrated) {
-            //Helicopter connected, send values over bluetooth
+            //Car connected, send values over bluetooth
 
             //Get direction
             //TODO: Replace this with a clever lamda function which I can never understand its syntax
             if ( event.values[2] < calibratedValues.baseValueZ ) {
-                helicopterDirection = ( (event.values[2]-calibratedValues.baseValueZ).unaryPlus()*100 ) / (calibratedValues.maxRightPos - calibratedValues.baseValueZ).unaryPlus() //the rule of three
+                carDirection = ( (event.values[2]-calibratedValues.baseValueZ).unaryPlus()*100 ) / (calibratedValues.maxRightPos - calibratedValues.baseValueZ).unaryPlus() //the rule of three
                 goesToTheRight = 1
             } else {
-                helicopterDirection = ( (event.values[2]-calibratedValues.baseValueZ).unaryPlus()*100 ) / (calibratedValues.maxLeftPos - calibratedValues.baseValueZ).unaryPlus() //the rule of three
+                carDirection = ( (event.values[2]-calibratedValues.baseValueZ).unaryPlus()*100 ) / (calibratedValues.maxLeftPos - calibratedValues.baseValueZ).unaryPlus() //the rule of three
                 goesToTheRight = 0
-            }
-
-            //Get way (sens in romana)
-            if ( event.values[1] > calibratedValues.baseValueY ) {
-                helicopterWay = 1
-            } else {
-                helicopterWay = 0
             }
 
             //Send command to bluetooth helicopter
             launch {
-                mainCharacteristic.value = byteArrayOfInts(altitude.progress, helicopterWay, helicopterDirection.toInt(), goesToTheRight)
-                helicopterConnection.writeCharacteristic(mainCharacteristic)
-                Log.d(TAG, "Direction: ${goesToTheRight}   ${helicopterDirection.toInt()}")
+                mainCharacteristic.value = byteArrayOfInts(altitude.progress, helicopterWay, carDirection.toInt(), goesToTheRight)
+                carConnection.writeCharacteristic(mainCharacteristic)
+                Log.d(TAG, "Direction: ${goesToTheRight}   ${carDirection.toInt()}")
             }
         }
     }
@@ -328,8 +314,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
     fun byteArrayOfInts(vararg ints: Int) = ByteArray(ints.size) { pos -> ints[pos].toByte() }
 }
 
-data class CalibrationData(var baseValueY: Float, var baseValueZ: Float,
-                           var maxLeftPos: Float, var maxRightPos: Float)
+data class CalibrationData(var baseValueZ: Float, var maxLeftPos: Float, var maxRightPos: Float)
 
 /*Log.d("CalibData", "baseValueY = ${calibratedValues.baseValueY}\n")
   Log.d("CalibData", "baseValueZ = ${calibratedValues.baseValueZ}\n")

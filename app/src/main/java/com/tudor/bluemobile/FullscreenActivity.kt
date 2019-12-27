@@ -76,6 +76,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
     private lateinit var mainCharacteristic: BluetoothGattCharacteristic
 
     //Direction and speed of the helicopter
+    private var isGoingForward: Int = 1
     private var carDirection: Float = 0.toFloat()
     private var helicopterWay: Int = 0
     private var goesToTheRight: Int = 0
@@ -125,28 +126,22 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
         fullscreen = findViewById<TextView>(R.id.fullscreen_content)
 
         //Find the takeoff button and set a click listener on it
-        findViewById<Button>(R.id.takeoff_button).setOnClickListener  {
+        findViewById<Button>(R.id.forward_button).setOnClickListener  {
             if (bleConnectionState) {
-                //show toast
-                val toast = Toast.makeText(applicationContext, "Incepem decolarea in 3...2...1...", Toast.LENGTH_LONG)
-                toast.show()
-
                 //send takeoff message to helicopter
-                altitude.progress = 50
+                altitude.progress = 0
+                isGoingForward = 1
             } else {
                 Toast.makeText(applicationContext, "Mai intai trebuie sa va conectati la elicopter!", Toast.LENGTH_LONG).show()
             }
         }
 
         //Find the land button and set a click listener on it
-        findViewById<Button>(R.id.land_button).setOnClickListener  {
+        findViewById<Button>(R.id.reverse_button).setOnClickListener  {
             if ( bleConnectionState) {
-                //show toast
-                val toast = Toast.makeText(applicationContext, "Incepem aterizarea in 3...2...1...", Toast.LENGTH_LONG)
-                toast.show()
-
                 //send land message to helicopter
                 altitude.progress = 0
+                isGoingForward = 0
             } else {
                 Toast.makeText(applicationContext, "Mai intai trebuie sa va conectati la elicopter!", Toast.LENGTH_LONG).show()
             }
@@ -280,7 +275,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
 
             //Send command to bluetooth helicopter
             launch {
-                mainCharacteristic.value = byteArrayOfInts(altitude.progress, helicopterWay, carDirection.toInt(), goesToTheRight)
+                mainCharacteristic.value = byteArrayOfInts(altitude.progress, isGoingForward, carDirection.toInt(), goesToTheRight)
                 carConnection.writeCharacteristic(mainCharacteristic)
                 Log.d(TAG, "Direction: ${goesToTheRight}   ${carDirection.toInt()}")
             }

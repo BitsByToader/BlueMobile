@@ -35,7 +35,7 @@
         tools:visibility="visible" />
 
     <Button
-        android:id="@+id/takeoff_button"
+        android:id="@+id/forward_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -45,7 +45,7 @@
         app:layout_constraintTop_toTopOf="@+id/fullscreen_content" />
 
     <Button
-        android:id="@+id/land_button"
+        android:id="@+id/reverse_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -80,9 +80,9 @@
         android:layout_marginStart="32dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/land_button"
+        app:layout_constraintBottom_toTopOf="@+id/reverse_button"
         app:layout_constraintStart_toStartOf="@+id/fullscreen_content"
-        app:layout_constraintTop_toBottomOf="@+id/takeoff_button">
+        app:layout_constraintTop_toBottomOf="@+id/forward_button">
 
         <SeekBar
             android:id="@+id/altitude_level"

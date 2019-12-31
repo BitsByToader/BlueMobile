@@ -78,7 +78,6 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
     //Direction and speed of the helicopter
     private var isGoingForward: Int = 1
     private var carDirection: Float = 0.toFloat()
-    private var helicopterWay: Int = 0
     private var goesToTheRight: Int = 0
 
 
@@ -94,18 +93,18 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
 
         //Create a sensor manager and gyroscope instance
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        mGyro= mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+        mGyro= mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
         //Register the listener for the gyroscope
         mSensorManager.registerListener(this,mGyro, SensorManager.SENSOR_DELAY_NORMAL) //1000s polling rate
 
         //Create the calibration dialog
-        calibrationDialogBuilder = AlertDialog.Builder(this)
+        /*calibrationDialogBuilder = AlertDialog.Builder(this)
         calibrationDialogBuilder.setMessage("Acum veti calibra senzorul. Apasati butonul Gata pentru a incepe.")
             .setCancelable(false)
             .setPositiveButton("Gata", null)
         alert = calibrationDialogBuilder.create()
-        alert.setTitle("Calibrare")
+        alert.setTitle("Calibrare")*/
 
         // Ensures Bluetooth is available on the device and it is enabled. If not,
         // displays a dialog requesting user permission to enable Bluetooth.
@@ -132,7 +131,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
                 altitude.progress = 0
                 isGoingForward = 1
             } else {
-                Toast.makeText(applicationContext, "Mai intai trebuie sa va conectati la elicopter!", Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, "Mai intai trebuie sa va conectati la masina!", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -143,25 +142,23 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
                 altitude.progress = 0
                 isGoingForward = 0
             } else {
-                Toast.makeText(applicationContext, "Mai intai trebuie sa va conectati la elicopter!", Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, "Mai intai trebuie sa va conectati la masina!", Toast.LENGTH_LONG).show()
             }
         }
 
         //Find the calibrate button and set a click listener on it
-        findViewById<Button>(R.id.calibrate_button).setOnClickListener  {
+        /*findViewById<Button>(R.id.calibrate_button).setOnClickListener  {
             alert.show()
-        }
+        }*/
 
         //Find the connect button and set a click listener to it
         connectButton.setOnClickListener {
             if ( bleConnectionState ) {
                 carConnection.close()
                 connectButton.text = "Conectare"
-                fullscreen.text = "Acum va puteti conecta la elicopter!"
+                fullscreen.text = "Acum va puteti conecta la masina!"
                 bleConnectionState = false
-            } else if ( !isCalibrated ) {
-                Toast.makeText(applicationContext, "Trebuie sa calibrati mai intai telefonul!", Toast.LENGTH_SHORT).show()
-            }  else {
+            } else {
                 //Find the bluetooth helicopter based on its MAC address and create a GATT instance with it
                 bluetoothLeCar = bluetoothAdapter!!.getRemoteDevice(defaultDeviceMacAddress)
                 carConnection = GattConnection.invoke(bluetoothLeCar)
@@ -205,15 +202,15 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
         })
 
         //Override the listener for the positive dialog button so it won't dismiss the dialog upon the press
-        alert.setOnShowListener {
+        /*alert.setOnShowListener {
             alert.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 when(calState) {
                     -1 -> { //Uncalibrated, move on to the calibration ~~ getting the base position of the phone
                         isCalibrated = false
                         alert.setMessage("Tineti telefonul intr-o pozitie comfortabila.")
                     }
-                    0 -> alert.setMessage("Miscati telefonul in pozitia in care elicopterul va face stanga.") //Maximum left position
-                    1 -> alert.setMessage("Miscati telefonul in pozitia in care elicopterul va face dreapta.") //Maximum right position
+                    0 -> alert.setMessage("Miscati telefonul in pozitia in care masina va face stanga.") //Maximum left position
+                    1 -> alert.setMessage("Miscati telefonul in pozitia in care masina va face dreapta.") //Maximum right position
                     2 -> { //Calibrated
                         calState = -2
                         alert.dismiss()
@@ -224,7 +221,7 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
                 }
                 calState++
             }
-        }
+        }*/
     }
 
     override fun onResume() {
@@ -251,33 +248,42 @@ class FullscreenActivity : AppCompatActivity(), SensorEventListener, CoroutineSc
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        //toBigDecimal().setScale(8, RoundingMode.UP)
-        if ( calState != -1 ) {
+        /*if ( calState != -1 ) {
             when(calState) {
                 0 -> {
-                    calibratedValues.baseValueZ = event.values[2]
+                    calibratedValues.baseValueZ = event.values[1]
                 }
-                1 -> calibratedValues.maxLeftPos = event.values[2]
-                2 -> calibratedValues.maxRightPos = event.values[2]
+                1 -> calibratedValues.maxLeftPos = event.values[1]
+                2 -> calibratedValues.maxRightPos = event.values[1]
             }
-        } else if (bleConnectionState && isCalibrated) {
+        } */
+        if (bleConnectionState) {
             //Car connected, send values over bluetooth
 
-            //Get direction
-            //TODO: Replace this with a clever lamda function which I can never understand its syntax
-            if ( event.values[2] < calibratedValues.baseValueZ ) {
-                carDirection = ( (event.values[2]-calibratedValues.baseValueZ).unaryPlus()*100 ) / (calibratedValues.maxRightPos - calibratedValues.baseValueZ).unaryPlus() //the rule of three
+            /*if ( event.values[1] < calibratedValues.baseValueZ ) {
+                carDirection = ( (event.values[1]-calibratedValues.baseValueZ).unaryPlus()*100 ) / (calibratedValues.maxRightPos - calibratedValues.baseValueZ).unaryPlus() //the rule of three
                 goesToTheRight = 1
             } else {
-                carDirection = ( (event.values[2]-calibratedValues.baseValueZ).unaryPlus()*100 ) / (calibratedValues.maxLeftPos - calibratedValues.baseValueZ).unaryPlus() //the rule of three
+                carDirection = ( (event.values[1]-calibratedValues.baseValueZ).unaryPlus()*100 ) / (calibratedValues.maxLeftPos - calibratedValues.baseValueZ).unaryPlus() //the rule of three
                 goesToTheRight = 0
+            }*/
+
+            carDirection = (event.values[1]*10)
+            if ( carDirection < 0 ) {
+                carDirection = -carDirection
+                goesToTheRight = 0
+            } else {
+                goesToTheRight = 1
             }
 
-            //Send command to bluetooth helicopter
+            fullscreen.text = "Direction: ${goesToTheRight}  ${carDirection.toInt()}"
+
+            //Send command to bluetooth car
             launch {
-                mainCharacteristic.value = byteArrayOfInts(altitude.progress, isGoingForward, carDirection.toInt(), goesToTheRight)
+                mainCharacteristic.value = byteArrayOfInts(altitude.progress, isGoingForward, carDirection.toInt() , goesToTheRight)
                 carConnection.writeCharacteristic(mainCharacteristic)
-                Log.d(TAG, "Direction: ${goesToTheRight}   ${carDirection.toInt()}")
+                //Log.d(TAG, "Direction: ${goesToTheRight}  ${carDirection.toInt()}")
+                //fullscreen.text = "Direction: ${goesToTheRight}  ${approximatedCarDirection}"
             }
         }
     }
